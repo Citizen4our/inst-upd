@@ -81,6 +81,8 @@ The project consists of several key components:
 
 The following features are planned for future development:
 
+- Add a tests
+- Add a more documentation
 - Fine-tune the WebSocket server
 - Transition to a real-time operating system
 - Integrate with Home Assistant for smart home functionality
