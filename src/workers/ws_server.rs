@@ -76,7 +76,7 @@ async fn websocket_handler(mut socket: WebSocket, rx: Arc<Mutex<hub::Client<Work
             total_bytes += frame.len();
             match socket.send(WebsocketMessage::Binary(frame)).await {
                 Ok(_) => {
-                    // write to logs if debug is enabled
+                    //@todo write to logs if debug is enabled
                     if frame_count % 120 == 0 {
                         let elapsed = start_time.elapsed();
                         let mb_processed = total_bytes as f64 / (1024.0 * 1024.0);
