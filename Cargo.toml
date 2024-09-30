@@ -1,0 +1,46 @@
+[package]
+name = "inst-upd"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+roboplc = { version = "0.4.5", features = ["full"] }
+tracing = { version = "0.1", features = ["log"] }
+serde = { version = "1.0.205", features = ["derive"] }
+roboplc-derive = "0.3.0"
+teloxide = { version = "0.13", features = ["macros"] }
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros"] }
+reqwest = { version = "0.12", features = ["blocking"] }
+ngrok = { version = "0.13" }
+rscam = "0.5.5"
+axum = { version = "0.7.5", features = ["ws"] }
+dotenv = "0.15.0"
+futures-util = "0.3.30"
+
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+style = "warn"
+correctness = "warn"
+complexity = "warn"
+perf = "warn"
+cargo = { level = "warn", priority = -1 }
+suspicious = "warn"
+missing_const_for_fn = "allow"
+missing_trait_methods = "allow"
+implicit_return = "allow"
+missing_docs_in_private_items = "allow"
+return_self_not_must_use = "allow"
+must_use_candidate = "allow"
+std_instead_of_core = "allow"
+missing_inline_in_public_items = "allow"
+pattern_type_mismatch = "allow"
+question_mark_used = "allow"
+exhaustive_structs = "allow"
+restriction = { level = "warn", priority = -1 }
