@@ -26,7 +26,7 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
         let mut camera = Camera::new(("/dev/video".to_string() + &dev_idx).as_str())?;
         let config = Config {
             interval: variables.interval,
-            resolution: (variables.width as u32, variables.height as u32),
+            resolution: (variables.width, variables.height),
             format: &variables.fourcc,
             nbuffers: variables.buf_size,
             ..Default::default()

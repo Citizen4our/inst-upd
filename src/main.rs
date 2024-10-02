@@ -22,8 +22,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // @todo move to the worker as function
     let rvideo_stream = rvideo::add_stream(
         rvideo::Format::MJpeg,
-        variables.camera_config.width,
-        variables.camera_config.height,
+        variables.camera_config.width as u16,
+        variables.camera_config.height as u16,
     )?;
 
     let detector_video = DetectorVideo::new_with_rvideo(rvideo_stream);

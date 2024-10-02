@@ -26,6 +26,7 @@ pub struct BotWorker {}
 
 impl Worker<WorkerMessage, Variables> for BotWorker {
     fn run(&mut self, context: &Context<WorkerMessage, Variables>) -> WResult {
+        //@todo find a other way to check internet connection
         while !check_internet_connection() {
             info!("No internet connection. Retrying in 5 seconds...");
             sleep(Duration::from_secs(5));
@@ -223,14 +224,14 @@ async fn command_handler(
                 format!("Video stream URL: https://{}/", &context.variables().ngrok_domain),
             )
             .await
-            .expect("TODO: panic message");
+            .expect("Could not send message");
 
             if *context.variables().is_ngrok_started.read() {
                 debug!("Ngrok is already started.");
 
                 bot.send_message(msg.chat.id, "Ngrok is already started.")
                     .await
-                    .expect("TODO: panic message");
+                    .expect("Could not send message");
                 return Ok(());
             }
 
@@ -267,7 +268,7 @@ async fn command_handler(
                 let mut ngrok_shutdown = context.variables().ngrok_shutdown_tx.lock().await;
 
                 if let Some(sender) = ngrok_shutdown.take() {
-                    sender.send(()).expect("TODO: panic message");
+                    sender.send(()).expect("Failed to send shutdown signal to ngrok.");
                 } else {
                     bot.send_message(msg.chat.id, "Video stream is not running.").await?;
 

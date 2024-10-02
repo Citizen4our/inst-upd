@@ -4,6 +4,11 @@ use std::sync::Arc;
 use tokio::sync::{oneshot, Mutex};
 
 const BUF_COUNT: u32 = 20;
+const DEFAULT_CAMERA_WIDTH: u32 = 640;
+const DEFAULT_CAMERA_HEIGHT: u32 = 480;
+const DEFAULT_CAMERA_DEV_IDX: u8 = 0;
+const DEFAULT_CAMERA_INTERVAL: (u32, u32) = (1, 30);
+const DEFAULT_CAMERA_FOURCC: [u8; 4] = *b"MJPG";
 
 #[derive(Clone, Debug)]
 pub enum WorkerMessage {
@@ -22,8 +27,8 @@ pub struct ServerState {
 #[derive(Debug, Default, Clone)]
 pub struct CameraConfig {
     pub interval: (u32, u32),
-    pub width: u16,
-    pub height: u16,
+    pub width: u32,
+    pub height: u32,
     pub fourcc: [u8; 4],
     pub buf_size: u32,
     pub dev_idx: u8,
@@ -64,12 +69,21 @@ pub fn init_config_by_env(args: Vec<(String, String)>) -> Variables {
 
     let variables = Variables {
         camera_config: CameraConfig {
-            interval: (1, 30),
-            width: hashmap.get("CAMERA_WIDTH").unwrap_or(&"640".to_string()).parse().unwrap(),
-            height: hashmap.get("CAMERA_HEIGHT").unwrap_or(&"480".to_string()).parse().unwrap(),
-            fourcc: *b"MJPG",
+            interval: DEFAULT_CAMERA_INTERVAL,
+            width: hashmap
+                .get("CAMERA_WIDTH")
+                .and_then(|w| w.parse::<u32>().ok())
+                .unwrap_or(DEFAULT_CAMERA_WIDTH),
+            height: hashmap
+                .get("CAMERA_HEIGHT")
+                .and_then(|h| h.parse::<u32>().ok())
+                .unwrap_or(DEFAULT_CAMERA_HEIGHT),
+            fourcc: DEFAULT_CAMERA_FOURCC,
             buf_size: BUF_COUNT,
-            dev_idx: hashmap.get("CAMERA_DEV_IDX").unwrap_or(&"0".to_string()).parse().unwrap(),
+            dev_idx: hashmap
+                .get("CAMERA_DEV_IDX")
+                .and_then(|h| h.parse::<u8>().ok())
+                .unwrap_or(DEFAULT_CAMERA_DEV_IDX),
         },
         ngrok_auth_token: hashmap
             .get("NGROK_AUTH_TOKEN")
@@ -83,7 +97,7 @@ pub fn init_config_by_env(args: Vec<(String, String)>) -> Variables {
         telegram_config: TelegramConfig {
             token: hashmap.get("TELEGRAM_TOKEN").expect("TELEGRAM_TOKEN is not set").to_string(),
             admin_user_id: admin_user_id,
-            allowed_user_ids: vec![admin_user_id, 427348891],
+            allowed_user_ids: allowed_user_ids,
         },
         is_ngrok_started: Arc::new(RwLock::new(false)),
         ngrok_shutdown_tx: Arc::new(Mutex::new(None)),
