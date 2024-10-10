@@ -1,0 +1,7 @@
+[remote]
+# set static ip address on the router for raspberry pi
+url = "http://192.168.1.104:7700"
+key = "roboplc"
+[build]
+
+[build-custom]
