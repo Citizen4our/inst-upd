@@ -83,9 +83,13 @@ The following features are planned for future development:
 
 - Add a tests
 - Add a more documentation
+- refactor the code (command_handler for example, etc.)
+- other way to check internet connection
 - Fine-tune the WebSocket server
 - Transition to a real-time operating system
 - Integrate with Home Assistant for smart home functionality
+- debug why after close stream page - WS not closed, frames stop sending from camera worker
+- create auth flow for new customer
 
 ## Contributing
 

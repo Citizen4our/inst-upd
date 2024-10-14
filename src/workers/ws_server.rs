@@ -2,21 +2,22 @@ use crate::prelude::*;
 use axum::extract::ws::{Message as WebsocketMessage, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::{Html, IntoResponse};
-use axum::routing::get;
+use axum::routing::{any, get};
 use axum::Router;
 use roboplc::controller::{Context, WResult, Worker};
+use roboplc::hub::Hub;
 use roboplc::{event_matches, hub};
 use roboplc_derive::WorkerOpts;
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
+use std::sync::{atomic, Arc};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use tokio::sync::Mutex;
-use tokio::time::{sleep, Instant};
+use tokio::time::{sleep, sleep_until, Instant};
 use tracing::{debug, error, info};
 
 #[derive(WorkerOpts)]
-#[worker_opts(cpu = 2, priority = 70, scheduling = "fifo", blocking = true)]
+#[worker_opts(cpu = 2, priority = 40, scheduling = "fifo", blocking = false)]
 pub struct WebSocketWorker {}
 
 impl Worker<WorkerMessage, Variables> for WebSocketWorker {
@@ -26,24 +27,21 @@ impl Worker<WorkerMessage, Variables> for WebSocketWorker {
 
         runtime.block_on(async {
             let ngrok_domain = context.variables().ngrok_domain.clone();
-            let hc: Arc<Mutex<hub::Client<WorkerMessage>>> = Arc::new(Mutex::new(
-                context
-                    .hub()
-                    .register("websocket: frame sender", event_matches!(WorkerMessage::Frame(_)))
-                    .unwrap(),
-            ));
+            let hub = context.hub().clone();
 
             let server_handle = tokio::spawn(async move {
                 let app_state = ServerState {
                     ws_path: format!("wss://{}/ws", ngrok_domain),
+                    connection_counter: Arc::new(AtomicUsize::new(0)),
                 };
 
                 let app = Router::new()
                     .route("/", get(index_handler))
                     .route(
                         "/ws",
-                        get(move |ws: WebSocketUpgrade| async move {
-                            ws.on_upgrade(move |socket| websocket_handler(socket, hc.clone()))
+                        any(move |ws: WebSocketUpgrade, state: State<ServerState>| async move {
+                            let connection_id = state.connection_counter.fetch_add(1, atomic::Ordering::Relaxed);
+                            ws.on_upgrade(move |socket| websocket_handler(socket, hub, connection_id))
                         }),
                     )
                     .with_state(app_state);
@@ -62,43 +60,65 @@ impl Worker<WorkerMessage, Variables> for WebSocketWorker {
 }
 
 /// Handles WebSocket connections
-async fn websocket_handler(mut socket: WebSocket, rx: Arc<Mutex<hub::Client<WorkerMessage>>>) {
-    info!("WebSocket connection established");
-    let hc = rx.lock().await;
+async fn websocket_handler(mut socket: WebSocket, hub: Hub<WorkerMessage>, connection_id: usize) {
+    info!("WebSocket {} connection established", connection_id);
+
+    // ~1 sec buffer
+    let frame_buffer = 32;
+    let client_options = hub::ClientOptions::new(
+        &("websocket: frame sender".to_owned() + &connection_id.to_string()),
+        event_matches!(WorkerMessage::Frame(_)),
+    )
+    .capacity(frame_buffer);
+    let hc = hub.register_with_options(client_options).unwrap();
 
     let mut attempts = 0;
     let start_time = Instant::now();
     let mut frame_count = 0;
     let mut total_bytes = 0;
-    while let Ok(frame) = hc.recv() {
-        if let WorkerMessage::Frame(frame) = frame {
-            frame_count += 1;
-            total_bytes += frame.len();
-            match socket.send(WebsocketMessage::Binary(frame)).await {
-                Ok(_) => {
-                    //@todo write to logs if debug is enabled
-                    if frame_count % 120 == 0 {
-                        let elapsed = start_time.elapsed();
-                        let mb_processed = total_bytes as f64 / (1024.0 * 1024.0);
-                        let average_fps = frame_count as f64 / elapsed.as_secs_f64();
-                        debug!("WS: Average FPS: {:.2}", average_fps);
-                        debug!("WS: Elapsed: {:.2}", elapsed.as_secs_f64());
-                        debug!("WS: MB processed: {:.2}", mb_processed);
+
+    // @TODO debug why after close stream page - WS not closed, frames stop sending from camera worker
+    loop {
+        match hc.try_recv() {
+            Ok(worker_message) => {
+                if let WorkerMessage::Frame(frame) = worker_message {
+                    frame_count += 1;
+                    total_bytes += frame.len();
+
+                    match socket.send(WebsocketMessage::Binary(frame)).await {
+                        Ok(_) => {
+                            if frame_count % 120 == 0 {
+                                let elapsed = start_time.elapsed();
+                                let mb_processed = total_bytes as f64 / (1024.0 * 1024.0);
+                                let average_fps = frame_count as f64 / elapsed.as_secs_f64();
+
+                                info!("WS {}: Average FPS: {:.2}", connection_id, average_fps);
+                                info!("WS {}: Elapsed: {:.2}", connection_id, elapsed.as_secs_f64());
+                                info!("WS {}: MB processed: {:.2}", connection_id, mb_processed);
+                                info!("WS {}: Total frames: {:.2}", connection_id, frame_count);
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to send frame to WebSocket {} client. Error: {:?}", connection_id, e);
+                            if attempts > 5 {
+                                break;
+                            }
+                            attempts += 1;
+                            sleep(Duration::from_secs(1)).await;
+                        }
                     }
                 }
-                Err(e) => {
-                    error!("Failed to send frame to WebSocket client. Error: {:?}", e);
-                    if attempts > 5 {
-                        break;
-                    }
-                    attempts += 1;
-                    sleep(Duration::from_secs(1)).await;
-                }
+            }
+            Err(error) => {
+                error!("WS {}: Error receiving message from hub: {:?}", connection_id, error);
+                sleep(Duration::from_millis(1000)).await;
+
+                continue;
             }
         }
     }
 
-    info!("WebSocket connection closed");
+    info!("WebSocket {} connection closed", connection_id);
 }
 
 /// video stream page handler

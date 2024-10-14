@@ -1,6 +1,6 @@
 [package]
 name = "inst-upd"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 
 [lib]
@@ -15,10 +15,10 @@ teloxide = { version = "0.13", features = ["macros"] }
 tokio = { version = "1.40", features = ["rt-multi-thread", "macros"] }
 reqwest = { version = "0.12", features = ["blocking"] }
 ngrok = { version = "0.13" }
-rscam = "0.5.5"
 axum = { version = "0.7.5", features = ["ws"] }
 dotenv = "0.15.0"
-futures-util = "0.3.30"
+nokhwa = { version = "0.10.5", features = ["input-v4l"] }
+#v4l = "0.14.0"
 
 
 [workspace.lints.rust]
