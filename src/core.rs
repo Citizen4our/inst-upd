@@ -1,5 +1,6 @@
 use roboplc::locking::RwLock;
 use roboplc::{DataDeliveryPolicy, DeliveryPolicy};
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use tokio::sync::{oneshot, Mutex};
 
@@ -17,11 +18,12 @@ pub enum WorkerMessage {
 }
 
 impl DataDeliveryPolicy for WorkerMessage {
-    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Latest }
+    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Always }
 }
 #[derive(Clone)]
 pub struct ServerState {
     pub ws_path: String,
+    pub connection_counter: Arc<AtomicUsize>,
 }
 
 #[derive(Debug, Default, Clone)]

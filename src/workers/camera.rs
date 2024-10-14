@@ -8,7 +8,7 @@ use std::time::Instant;
 use tracing::{debug, info};
 
 #[derive(WorkerOpts)]
-#[worker_opts(cpu = 3, priority = 80, scheduling = "fifo", blocking = true)]
+#[worker_opts(cpu = 3, priority = 90, scheduling = "fifo", blocking = true)]
 pub struct DetectorVideo {
     stream: Option<rvideo::Stream>,
 }
@@ -67,10 +67,12 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
                 let elapsed = start_time.elapsed();
                 let mb_processed = total_bytes as f64 / (1024.0 * 1024.0);
                 let average_fps = frame_count as f64 / elapsed.as_secs_f64();
-                debug!("Average FPS: {:.2}", average_fps);
-                debug!("Elapsed: {:.2}", elapsed.as_secs_f64());
-                debug!("MB processed: {:.2}", mb_processed);
+                info!("camera: Average FPS: {:.2}", average_fps);
+                info!("camera: Elapsed: {:.2}", elapsed.as_secs_f64());
+                info!("camera: MB processed: {:.2}", mb_processed);
             }
         }
+
+        info!(dev_idx, "Camera stopped.");
     }
 }

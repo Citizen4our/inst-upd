@@ -3,7 +3,7 @@ use ngrok::config::TunnelBuilder;
 use ngrok::prelude::{TunnelExt, UrlTunnel};
 use reqwest::blocking::Client;
 use roboplc::controller::{Context, WResult, Worker};
-use roboplc::event_matches;
+use roboplc::{event_matches, DataChannel};
 use roboplc_derive::WorkerOpts;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 use tracing::{debug, error, info, warn};
 
 #[derive(WorkerOpts)]
-#[worker_opts(cpu = 2, priority = 80, scheduling = "fifo", blocking = true)]
+#[worker_opts(cpu = 1, priority = 80, scheduling = "fifo", blocking = true)]
 pub struct BotWorker {}
 
 impl Worker<WorkerMessage, Variables> for BotWorker {
@@ -187,11 +187,19 @@ async fn command_handler(
                 );
 
                 // Wait for a frame from the hub
-                if let Ok(WorkerMessage::Frame(frame_data)) = hc.try_recv() {
-                    bot.send_photo(msg.chat.id, InputFile::memory(frame_data)).await?;
-                } else {
-                    bot.send_message(msg.chat.id, "Failed to capture photo. Please try again later.")
+                match hc.try_recv() {
+                    Ok(frame_data) => {
+                        if let WorkerMessage::Frame(frame) = frame_data {
+                            bot.send_photo(msg.chat.id, InputFile::memory(frame)).await?;
+                        }
+                    }
+                    Err(e) => {
+                        bot.send_message(
+                            msg.chat.id,
+                            format!("Failed to capture photo. Please try again later. Error: {:?}", e),
+                        )
                         .await?;
+                    }
                 }
             } else {
                 warn!("User not allowed to use this command. User id: {:?}", msg.chat.id);

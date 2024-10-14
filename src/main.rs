@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let variables = init_config_by_env(dotenv::vars().collect());
 
-    // @todo move to the worker as function
+    // @todo move to init function
     let rvideo_stream = rvideo::add_stream(
         rvideo::Format::MJpeg,
         variables.camera_config.width as u16,
