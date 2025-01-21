@@ -6,7 +6,7 @@ use axum::routing::{any, get};
 use axum::Router;
 use roboplc::controller::{Context, WResult, Worker};
 use roboplc::hub::Hub;
-use roboplc::{event_matches, hub};
+use roboplc::{event_matches, hub, DataChannel};
 use roboplc_derive::WorkerOpts;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicUsize;

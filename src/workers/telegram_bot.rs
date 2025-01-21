@@ -3,7 +3,7 @@ use ngrok::config::TunnelBuilder;
 use ngrok::prelude::{TunnelExt, UrlTunnel};
 use reqwest::blocking::Client;
 use roboplc::controller::{Context, WResult, Worker};
-use roboplc::event_matches;
+use roboplc::{event_matches, DataChannel};
 use roboplc_derive::WorkerOpts;
 use std::fmt::Debug;
 use std::sync::Arc;
