@@ -1,6 +1,6 @@
 [package]
 name = "inst-upd"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 
 [lib]
@@ -18,7 +18,7 @@ ngrok = { version = "0.13" }
 rscam = "0.5.5"
 axum = { version = "0.7.5", features = ["ws"] }
 dotenv = "0.15.0"
-futures-util = "0.3.30"
+futures-util = "0.3"
 
 
 [workspace.lints.rust]

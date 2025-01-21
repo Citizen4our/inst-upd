@@ -1,14 +1,16 @@
 use roboplc::locking::RwLock;
 use roboplc::{DataDeliveryPolicy, DeliveryPolicy};
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use tokio::sync::{oneshot, Mutex};
 
 const BUF_COUNT: u32 = 20;
 const DEFAULT_CAMERA_WIDTH: u32 = 640;
 const DEFAULT_CAMERA_HEIGHT: u32 = 480;
-const DEFAULT_CAMERA_DEV_IDX: u8 = 0;
+const DEFAULT_CAMERA_DEV_IDX: u32 = 0;
 const DEFAULT_CAMERA_INTERVAL: (u32, u32) = (1, 30);
-const DEFAULT_CAMERA_FOURCC: [u8; 4] = *b"MJPG";
+//@todo change to &str
+const DEFAULT_CAMERA_FOURCC: [u8; 5] = *b"MJPEG";
 
 #[derive(Clone, Debug)]
 pub enum WorkerMessage {
@@ -17,11 +19,12 @@ pub enum WorkerMessage {
 }
 
 impl DataDeliveryPolicy for WorkerMessage {
-    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Latest }
+    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Always }
 }
 #[derive(Clone)]
 pub struct ServerState {
     pub ws_path: String,
+    pub connection_counter: Arc<AtomicUsize>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -29,9 +32,10 @@ pub struct CameraConfig {
     pub interval: (u32, u32),
     pub width: u32,
     pub height: u32,
-    pub fourcc: [u8; 4],
+    pub fourcc: [u8; 5],
+    // pub fourcc_f: [u8; 4],
     pub buf_size: u32,
-    pub dev_idx: u8,
+    pub dev_idx: u32,
 }
 #[derive(Default, Debug, Clone)]
 pub struct Variables {
@@ -82,7 +86,7 @@ pub fn init_config_by_env(args: Vec<(String, String)>) -> Variables {
             buf_size: BUF_COUNT,
             dev_idx: hashmap
                 .get("CAMERA_DEV_IDX")
-                .and_then(|h| h.parse::<u8>().ok())
+                .and_then(|h| h.parse::<u32>().ok())
                 .unwrap_or(DEFAULT_CAMERA_DEV_IDX),
         },
         ngrok_auth_token: hashmap
