@@ -3,6 +3,7 @@ use ngrok::config::TunnelBuilder;
 use ngrok::prelude::{TunnelExt, UrlTunnel};
 use reqwest::blocking::Client;
 use roboplc::controller::{Context, WResult, Worker};
+use roboplc::locking::Mutex;
 use roboplc::{event_matches, DataChannel};
 use roboplc_derive::WorkerOpts;
 use std::fmt::Debug;
@@ -19,7 +20,6 @@ use tokio::net::ToSocketAddrs;
 use tokio::runtime::Runtime;
 use tokio::sync::oneshot;
 use tracing::{debug, error, info, warn};
-
 #[derive(WorkerOpts)]
 #[worker_opts(cpu = 1, priority = 80, scheduling = "fifo", blocking = true)]
 pub struct BotWorker {}
@@ -56,7 +56,6 @@ fn check_internet_connection() -> bool {
         }
     }
 }
-
 
 pub fn run_ngrok(
     auth_token: String,

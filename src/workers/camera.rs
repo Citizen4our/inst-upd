@@ -5,7 +5,7 @@ use roboplc_derive::WorkerOpts;
 use rscam::{Camera, Config};
 use serde::de::StdError;
 use std::time::Instant;
-use tracing::{debug, info};
+use tracing::info;
 
 #[derive(WorkerOpts)]
 #[worker_opts(cpu = 3, priority = 90, scheduling = "fifo", blocking = true)]
@@ -24,26 +24,80 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
         let dev_idx = variables.dev_idx.to_string();
         info!(dev_idx, "Opening camera device");
         let mut camera = Camera::new(("/dev/video".to_string() + &dev_idx).as_str())?;
+
+        // First, check available formats and validate the requested format
+        let mut available_formats = Vec::new();
+        let mut requested_format_supported = false;
+
+        // Convert 5-byte format to 4-byte format for comparison
+        let requested_format_4byte: [u8; 4] = [
+            variables.fourcc[0],
+            variables.fourcc[1],
+            variables.fourcc[2],
+            variables.fourcc[3],
+        ];
+
+        info!(dev_idx, "Checking available camera formats");
+        for control in camera.formats() {
+            let format = control.unwrap();
+            available_formats.push(format.format.clone());
+            info!("Available format: {:?}", format.format);
+
+            // Check if our requested format is supported
+            if format.format == requested_format_4byte {
+                requested_format_supported = true;
+                info!("Requested format {:?} is supported", requested_format_4byte);
+            }
+
+            camera.resolutions(&format.format).iter().for_each(|control| {
+                info!("Available resolution for {:?}: {:?}", format.format, control);
+            });
+        }
+
+        // If requested format is not supported, try to find a suitable alternative
+        let format_to_use = if requested_format_supported {
+            requested_format_4byte
+        } else {
+            // Try common formats in order of preference
+            let fallback_formats = [
+                [b'M', b'J', b'P', b'G'], // MJPEG
+                [b'Y', b'U', b'Y', b'V'], // YUYV
+                [b'R', b'G', b'B', b'3'], // RGB3
+                [b'B', b'G', b'R', b'3'], // BGR3
+            ];
+            let mut selected_format = None;
+
+            for fallback in &fallback_formats {
+                if available_formats.contains(fallback) {
+                    selected_format = Some(*fallback);
+                    info!("Using fallback format: {:?}", fallback);
+                    break;
+                }
+            }
+
+            match selected_format {
+                Some(format) => format,
+                None => {
+                    return Err(format!(
+                        "No supported format found. Available formats: {:?}, Requested: {:?}",
+                        available_formats, requested_format_4byte
+                    )
+                    .into());
+                }
+            }
+        };
+
         let config = Config {
             interval: variables.interval,
             resolution: (variables.width, variables.height),
-            format: &variables.fourcc,
+            format: &format_to_use,
             nbuffers: variables.buf_size,
             ..Default::default()
         };
 
+        info!(dev_idx, "Starting camera with format: {:?}", format_to_use);
         camera.start(&config)?;
-        info!(dev_idx, "Camera started.");
-
-        // @todo add validation for the format
-        for control in camera.formats() {
-            let format = control.unwrap();
-
-            info!("format: {:?}", format);
-            camera.resolutions(&format.format).iter().for_each(|control| {
-                info!("resolution: {:?}", control);
-            });
-        }
+        info!(dev_idx, "Camera started successfully.");
 
         let start_time = Instant::now();
         let mut frame_count = 0;
@@ -53,7 +107,6 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
             let frame = camera.capture()?;
             frame_count += 1;
             total_bytes += frame.len();
-
 
             let frame_data = frame.to_vec();
 
@@ -72,7 +125,5 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
                 info!("camera: MB processed: {:.2}", mb_processed);
             }
         }
-
-        info!(dev_idx, "Camera stopped.");
     }
 }

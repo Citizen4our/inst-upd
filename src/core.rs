@@ -9,7 +9,7 @@ const DEFAULT_CAMERA_WIDTH: u32 = 640;
 const DEFAULT_CAMERA_HEIGHT: u32 = 480;
 const DEFAULT_CAMERA_DEV_IDX: u32 = 0;
 const DEFAULT_CAMERA_INTERVAL: (u32, u32) = (1, 30);
-//@todo change to &str
+// Default camera format - will be validated against available formats
 const DEFAULT_CAMERA_FOURCC: [u8; 5] = *b"MJPEG";
 
 #[derive(Clone, Debug)]
@@ -32,8 +32,9 @@ pub struct CameraConfig {
     pub interval: (u32, u32),
     pub width: u32,
     pub height: u32,
+    /// Camera format as 4CC code (e.g., "MJPEG", "YUYV").
+    /// Will be validated against available camera formats at runtime.
     pub fourcc: [u8; 5],
-    // pub fourcc_f: [u8; 4],
     pub buf_size: u32,
     pub dev_idx: u32,
 }

@@ -24,7 +24,6 @@ impl Worker<WorkerMessage, Variables> for WebSocketWorker {
     fn run(&mut self, context: &Context<WorkerMessage, Variables>) -> WResult {
         let runtime = Runtime::new().unwrap();
 
-
         runtime.block_on(async {
             let ngrok_domain = context.variables().ngrok_domain.clone();
             let hub = context.hub().clone();
@@ -45,7 +44,6 @@ impl Worker<WorkerMessage, Variables> for WebSocketWorker {
                         }),
                     )
                     .with_state(app_state);
-
 
                 let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
                 info!("Starting server on http://{}", addr);

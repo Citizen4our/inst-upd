@@ -6,7 +6,6 @@ use std::time::Duration;
 
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     roboplc::setup_panic();
@@ -32,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     controller.spawn_worker(RvideoSrv {})?;
     controller.spawn_worker(detector_video)?;
-    controller.spawn_worker(BotWorker {})?;
+    // controller.spawn_worker(BotWorker {})?;
     controller.spawn_worker(WebSocketWorker {})?;
     // register SIGINT and SIGTERM signals with max shutdown timeout
     controller.register_signals(SHUTDOWN_TIMEOUT)?;

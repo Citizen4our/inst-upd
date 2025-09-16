@@ -7,4 +7,4 @@ bf:
 
 ssh:
     @echo "SSH into the raspberry pi"
-    ssh citizen4our@raspberrypi.local
+    ssh citizen4our@192.168.50.52

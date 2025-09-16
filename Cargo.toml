@@ -7,7 +7,7 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
-roboplc = { version = "0.4.5", features = ["full"] }
+roboplc = { version = "0.6", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }
 serde = { version = "1.0.205", features = ["derive"] }
 roboplc-derive = "0.3.0"
