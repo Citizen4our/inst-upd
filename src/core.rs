@@ -1,8 +1,8 @@
 use roboplc::locking::RwLock;
 use roboplc::{DataDeliveryPolicy, DeliveryPolicy};
-use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
-use tokio::sync::{oneshot, Mutex};
+use std::sync::atomic::AtomicUsize;
+use tokio::sync::{Mutex, oneshot};
 
 const BUF_COUNT: u32 = 20;
 const DEFAULT_CAMERA_WIDTH: u32 = 640;
@@ -19,7 +19,9 @@ pub enum WorkerMessage {
 }
 
 impl DataDeliveryPolicy for WorkerMessage {
-    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Always }
+    fn delivery_policy(&self) -> DeliveryPolicy {
+        DeliveryPolicy::Always
+    }
 }
 #[derive(Clone)]
 pub struct ServerState {

@@ -14,9 +14,13 @@ pub struct DetectorVideo {
 }
 
 impl DetectorVideo {
-    pub fn new_with_rvideo(stream: rvideo::Stream) -> Self { Self { stream: Some(stream) } }
+    pub fn new_with_rvideo(stream: rvideo::Stream) -> Self {
+        Self { stream: Some(stream) }
+    }
 
-    pub fn new() -> Self { Self { stream: None } }
+    pub fn new() -> Self {
+        Self { stream: None }
+    }
 }
 impl Worker<WorkerMessage, Variables> for DetectorVideo {
     fn run(&mut self, context: &Context<WorkerMessage, Variables>) -> Result<(), Box<(dyn StdError + Send + Sync + 'static)>> {
@@ -46,7 +50,7 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
             // Check if our requested format is supported
             if format.format == requested_format_4byte {
                 requested_format_supported = true;
-                info!("Requested format {:?} is supported", requested_format_4byte);
+                info!(dev_idx, "Requested format {:?} is supported", requested_format_4byte);
             }
 
             camera.resolutions(&format.format).iter().for_each(|control| {
@@ -56,8 +60,13 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
 
         // If requested format is not supported, try to find a suitable alternative
         let format_to_use = if requested_format_supported {
+            info!(dev_idx, "Using requested format: {:?}", requested_format_4byte);
             requested_format_4byte
         } else {
+            info!(
+                dev_idx,
+                "Requested format {:?} not supported, trying fallback formats", requested_format_4byte
+            );
             // Try common formats in order of preference
             let fallback_formats = [
                 [b'M', b'J', b'P', b'G'], // MJPEG
@@ -70,7 +79,7 @@ impl Worker<WorkerMessage, Variables> for DetectorVideo {
             for fallback in &fallback_formats {
                 if available_formats.contains(fallback) {
                     selected_format = Some(*fallback);
-                    info!("Using fallback format: {:?}", fallback);
+                    info!(dev_idx, "Using fallback format: {:?}", fallback);
                     break;
                 }
             }

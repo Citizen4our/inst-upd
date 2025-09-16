@@ -1,19 +1,19 @@
 use crate::prelude::*;
+use axum::Router;
 use axum::extract::ws::{Message as WebsocketMessage, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::{Html, IntoResponse};
 use axum::routing::{any, get};
-use axum::Router;
 use roboplc::controller::{Context, WResult, Worker};
 use roboplc::hub::Hub;
 use roboplc::{event_matches, hub};
 use roboplc_derive::WorkerOpts;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicUsize;
-use std::sync::{atomic, Arc};
+use std::sync::{Arc, atomic};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use tokio::time::{sleep, Instant};
+use tokio::time::{Instant, sleep};
 use tracing::{error, info};
 
 #[derive(WorkerOpts)]

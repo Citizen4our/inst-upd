@@ -1,6 +1,6 @@
 use crate::core::{Variables, WorkerMessage};
 use ngrok::config::TunnelBuilder;
-use ngrok::prelude::{TunnelExt, UrlTunnel};
+use ngrok::tunnel::{Tunnel, UrlTunnel};
 use reqwest::blocking::Client;
 use roboplc::controller::{Context, WResult, Worker};
 use roboplc::event_matches;
@@ -14,7 +14,7 @@ use teloxide::macros::BotCommands;
 use teloxide::prelude::{ChatId, Message, Request, Requester, ResponseResult, Update};
 use teloxide::types::InputFile;
 use teloxide::utils::command::BotCommands as UtilsBotCommands;
-use teloxide::{dptree, Bot};
+use teloxide::{Bot, dptree};
 use tokio::net::ToSocketAddrs;
 use tokio::runtime::Runtime;
 use tokio::sync::oneshot;
@@ -82,11 +82,12 @@ async fn listen_ngrok(
     info!("Ngrok trying to forward tcp");
     let url = tunnel.url().to_string();
     info!("Ngrok forwarding to: {:?}", forward_to);
-    let tunnel = tunnel.forward_tcp(forward_to);
+    let forwards_to = tunnel.forwards_to();
     info!("Ngrok tunnel established at: {}", url);
+    info!("Ngrok forwards to: {}", forwards_to);
 
     tokio::select! {
-        _ = tunnel => {
+        _ = tunnel.close() => {
             info!("Ngrok tunnel closed");
         }
         _ = shutdown_rx => {
