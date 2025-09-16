@@ -6,7 +6,5 @@ use roboplc_derive::WorkerOpts;
 pub struct RvideoSrv {}
 
 impl Worker<WorkerMessage, Variables> for RvideoSrv {
-    fn run(&mut self, _context: &Context<WorkerMessage, Variables>) -> WResult {
-        roboplc::serve_rvideo().map_err(Into::into)
-    }
+    fn run(&mut self, _context: &Context<WorkerMessage, Variables>) -> WResult { roboplc::serve_rvideo().map_err(Into::into) }
 }

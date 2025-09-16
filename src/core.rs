@@ -19,9 +19,7 @@ pub enum WorkerMessage {
 }
 
 impl DataDeliveryPolicy for WorkerMessage {
-    fn delivery_policy(&self) -> DeliveryPolicy {
-        DeliveryPolicy::Always
-    }
+    fn delivery_policy(&self) -> DeliveryPolicy { DeliveryPolicy::Always }
 }
 #[derive(Clone)]
 pub struct ServerState {

@@ -14,13 +14,9 @@ pub struct DetectorVideo {
 }
 
 impl DetectorVideo {
-    pub fn new_with_rvideo(stream: rvideo::Stream) -> Self {
-        Self { stream: Some(stream) }
-    }
+    pub fn new_with_rvideo(stream: rvideo::Stream) -> Self { Self { stream: Some(stream) } }
 
-    pub fn new() -> Self {
-        Self { stream: None }
-    }
+    pub fn new() -> Self { Self { stream: None } }
 }
 impl Worker<WorkerMessage, Variables> for DetectorVideo {
     fn run(&mut self, context: &Context<WorkerMessage, Variables>) -> Result<(), Box<(dyn StdError + Send + Sync + 'static)>> {
