@@ -1,3 +1,6 @@
+build:
+    cross build --release
+    
 c_p:
     @echo "Copying binary file to the raspberry pi"
     robo flash --file target/aarch64-unknown-linux-gnu/release/inst-upd -r -f

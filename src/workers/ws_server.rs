@@ -6,15 +6,15 @@ use axum::routing::{any, get};
 use axum::Router;
 use roboplc::controller::{Context, WResult, Worker};
 use roboplc::hub::Hub;
-use roboplc::{event_matches, hub, DataChannel};
+use roboplc::{event_matches, hub};
 use roboplc_derive::WorkerOpts;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicUsize;
 use std::sync::{atomic, Arc};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use tokio::time::{sleep, sleep_until, Instant};
-use tracing::{debug, error, info};
+use tokio::time::{sleep, Instant};
+use tracing::{error, info};
 
 #[derive(WorkerOpts)]
 #[worker_opts(cpu = 2, priority = 40, scheduling = "fifo", blocking = false)]
